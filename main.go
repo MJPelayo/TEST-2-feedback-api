@@ -224,18 +224,38 @@ func submitFeedback(w http.ResponseWriter, r *http.Request) {
 	})
 }
 
+// getAllFeedback handles GET requests to /api/feedback/all
+// Returns all feedback submissions as a JSON array
+func getAllFeedback(w http.ResponseWriter, r *http.Request) {
+	// Only allow GET method
+	if r.Method != http.MethodGet {
+		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+
+	// Retrieve all feedback from storage
+	allFeedbacks := storage.GetAll()
+
+	// Return JSON array of all feedback entries
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK) // 200 OK status
+	json.NewEncoder(w).Encode(allFeedbacks)
+}
+
 func main() {
 	// Set up the HTTP server routes
-	// Apply CORS middleware to the feedback endpoint
-	http.HandleFunc("/api/feedback", enableCORS(submitFeedback))
-	http.HandleFunc("/health", healthCheck)
+	// Apply CORS middleware to both endpoints
+	http.HandleFunc("/api/feedback", enableCORS(submitFeedback))     // POST - submit new feedback
+	http.HandleFunc("/api/feedback/all", enableCORS(getAllFeedback)) // GET - retrieve all feedback
+	http.HandleFunc("/health", healthCheck)                          // GET - health check (no CORS needed)
 
 	// Start the server on port 8080
 	port := ":8080"
 	fmt.Printf("Server starting on http://localhost%s\n", port)
 	fmt.Println("Available endpoints:")
-	fmt.Println("  POST /api/feedback - Submit feedback form")
-	fmt.Println("  GET  /health       - Health check")
+	fmt.Println("  POST /api/feedback       - Submit feedback form")
+	fmt.Println("  GET  /api/feedback/all   - Get all feedback submissions")
+	fmt.Println("  GET  /health             - Health check")
 	fmt.Println("\nPress Ctrl+C to stop the server")
 
 	// Listen and serve - this blocks forever
