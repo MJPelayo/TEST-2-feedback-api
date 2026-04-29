@@ -242,21 +242,43 @@ func getAllFeedback(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(allFeedbacks)
 }
 
+// serveHTML serves the index.html file for the web interface
+func serveHTML(w http.ResponseWriter, r *http.Request) {
+	// Only serve the root path
+	if r.URL.Path != "/" {
+		http.NotFound(w, r)
+		return
+	}
+
+	// Set content type and serve the HTML file
+	w.Header().Set("Content-Type", "text/html; charset=utf-8")
+	http.ServeFile(w, r, "index.html")
+}
+
 func main() {
 	// Set up the HTTP server routes
-	// Apply CORS middleware to both endpoints
+	// Apply CORS middleware to API endpoints
 	http.HandleFunc("/api/feedback", enableCORS(submitFeedback))     // POST - submit new feedback
 	http.HandleFunc("/api/feedback/all", enableCORS(getAllFeedback)) // GET - retrieve all feedback
-	http.HandleFunc("/health", healthCheck)                          // GET - health check (no CORS needed)
+
+	// Serve the HTML form interface
+	http.HandleFunc("/", serveHTML) // GET - web interface
+
+	// Health check endpoint (no CORS needed for internal monitoring)
+	http.HandleFunc("/health", healthCheck)
 
 	// Start the server on port 8080
 	port := ":8080"
-	fmt.Printf("Server starting on http://localhost%s\n", port)
-	fmt.Println("Available endpoints:")
-	fmt.Println("  POST /api/feedback       - Submit feedback form")
-	fmt.Println("  GET  /api/feedback/all   - Get all feedback submissions")
-	fmt.Println("  GET  /health             - Health check")
-	fmt.Println("\nPress Ctrl+C to stop the server")
+	fmt.Printf("========================================\n")
+	fmt.Printf("✅ Feedback API Server Started\n")
+	fmt.Printf("========================================\n")
+	fmt.Printf("📍 Web Interface: http://localhost%s\n", port)
+	fmt.Printf("📍 API Endpoints:\n")
+	fmt.Printf("   POST %s/api/feedback     - Submit feedback\n", port)
+	fmt.Printf("   GET  %s/api/feedback/all - Get all feedback\n", port)
+	fmt.Printf("   GET  %s/health           - Health check\n", port)
+	fmt.Printf("========================================\n")
+	fmt.Printf("Press Ctrl+C to stop the server\n\n")
 
 	// Listen and serve - this blocks forever
 	log.Fatal(http.ListenAndServe(port, nil))
